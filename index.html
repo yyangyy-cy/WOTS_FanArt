@@ -981,13 +981,22 @@ function goMenu() {
   menu.scrollTop = 0;
 }
 
+/* 存檔裡記的音樂：只認檔名，而且必須是這一章真的有用到的，否則改播這一章開頭的音樂 */
+function savedBgm(n, d) {
+  const first = CHAPTERS[n].bgm || "";
+  if (!d || !d.bgm) return first;
+  const name = String(d.bgm).split("/").pop();
+  const used = [first].concat(CHAPTERS[n].script.map(x => x.bgm)).filter(Boolean);
+  return used.includes(name) ? name : first;
+}
+
 /* 從章節頁進入章節：畫面轉黑、音樂同時換成該章的，再亮起來 */
 function enterChapter(n) {
   if (fading) return;
   if (reduceMotion) { openChapter(n); return; }
   fading = true;
   const d = store.saves[n];
-  playBgm((d && d.bgm) || CHAPTERS[n].bgm);   // 接著看的話，播上次離開時的那一首
+  playBgm(savedBgm(n, d));   // 接著看的話，播上次離開時的那一首
   $("blackout").classList.add("on");
   fadeTimer = setTimeout(() => openChapter(n), FADE_MS + 150);
 }
@@ -1014,7 +1023,7 @@ function openChapter(n, fresh) {
   curBgm = CHAPTERS[n].bgm || "";
   if (d && Number.isInteger(d.i) && d.i >= 0 && d.i < script.length) {
     i = d.i;
-    if (d.bgm) curBgm = d.bgm;
+    curBgm = savedBgm(n, d);
     if (d.bg) stage.dataset.bg = d.bg;
     sceneEl.textContent = d.scene || "";
     history = Array.isArray(d.history) ? d.history.slice() : [];
