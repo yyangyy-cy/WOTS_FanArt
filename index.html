@@ -913,6 +913,42 @@ function toggleMusic() {
   if (musicOn) playBgm(currentBgm()); else { const keep = bgmSrc; stopBgm(); bgmSrc = keep; }
 }
 
+/* ---------- 背景照片預先載入 ---------- */
+/* 場景名稱 → 照片檔。網站一打開就先在背後下載，進章節時才不會卡一下 */
+const BG_FILES = {
+  "cafe": "bg-cafe-night.jpg",
+  "night": "bg-cafe-night.jpg",
+  "basement": "bg-basement.jpg",
+  "cafe-rain": "bg-cafe-rain.jpg"
+};
+const bgReady = {};
+function preloadBg(name) {
+  const file = BG_FILES[name];
+  if (!file) return Promise.resolve();
+  if (!bgReady[file]) {
+    bgReady[file] = new Promise(done => {
+      const im = new Image();
+      im.onload = () => { (im.decode ? im.decode() : Promise.resolve()).then(done, done); };
+      im.onerror = done;
+      im.src = file;
+    });
+  }
+  return bgReady[file];
+}
+/* 等這張背景準備好，但最多只等 ms 毫秒（網路太慢就不等了） */
+function whenBg(name, ms) {
+  return Promise.race([preloadBg(name), new Promise(done => setTimeout(done, ms))]);
+}
+Object.keys(BG_FILES).forEach(preloadBg);
+
+/* 這一章一進去會用到哪張背景 */
+function firstBg(n) {
+  const d = store.saves[n];
+  if (d && d.bg) return d.bg;
+  const f = CHAPTERS[n].script.find(x => x.bg);
+  return f ? f.bg : "";
+}
+
 /* ---------- 標題頁 ---------- */
 $("titleMain").textContent = TITLE.main;
 $("titleSub").textContent = TITLE.sub;
@@ -1000,7 +1036,10 @@ function enterChapter(n) {
   const d = store.saves[n];
   playBgm(savedBgm(n, d));   // 接著看的話，播上次離開時的那一首
   $("blackout").classList.add("on");
-  fadeTimer = setTimeout(() => openChapter(n), FADE_MS + 150);
+  const seq = ++fadeSeq;
+  fadeTimer = setTimeout(() => {
+    whenBg(firstBg(n), 2500).then(() => { if (seq === fadeSeq) openChapter(n); });
+  }, FADE_MS + 150);
 }
 
 function openChapter(n, fresh) {
@@ -1168,13 +1207,15 @@ function showEnd() {
 
 /* 轉黑過場：畫面變黑 → 換場景 → 亮起來 → 接著播下一句 */
 const FADE_MS = 700;     // 轉黑、亮起各花多久（毫秒）
-let fading = false, fadeTimer = null;
+let fading = false, fadeTimer = null, fadeSeq = 0;
 function stopFade() {
+  fadeSeq++;                 // 讓還在等背景的舊轉場作廢
   clearTimeout(fadeTimer);
   fading = false;
   $("blackout").classList.remove("on");
 }
 function startFade(s) {
+  const seq = ++fadeSeq;
   fading = true;
   clearTimeout(autoTimer);
   box.classList.remove("done");
@@ -1189,8 +1230,11 @@ function startFade(s) {
     textEl.textContent = fullText = "";
     box.classList.remove("narration", "think");
     i++;
-    $("blackout").classList.remove("on");
-    fadeTimer = setTimeout(() => { fading = false; run(); }, FADE_MS);
+    whenBg(s.bg, 2000).then(() => {
+      if (seq !== fadeSeq) return;
+      $("blackout").classList.remove("on");
+      fadeTimer = setTimeout(() => { fading = false; run(); }, FADE_MS);
+    });
   }, FADE_MS + 150);
 }
 
