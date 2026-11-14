@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文字劇情遊戲模板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Noto+Sans+TC:wght@400;600;900&display=swap" rel="stylesheet">
+<style>
+/* 版面想法：章節頁是一張目錄；劇情頁整個畫面是舞台，文字框固定在下方，
+   名字牌掛在文字框右上角，文字框上方有一條可點的「上一句」回顧欄。單一夜色主題。 */
+:root {
+  color-scheme: dark;
+  --deep: #131a2b;          /* 底色 */
+  --panel: rgba(17, 23, 40, .88); /* 文字框 */
+  --ink: #f2ecdf;           /* 內文 */
+  --muted: #a7afc2;         /* 旁白、次要文字 */
+  --line: rgba(242, 236, 223, .22); /* 邊線 */
+  --accent: #e3b56b;        /* 燈火色：名字牌、提示 */
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-title: "Corinthia", "Snell Roundhand", "Apple Chancery", cursive;   /* 標題頁的英文書寫體 */
+  --font-display: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--deep);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.8;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* ---------- 標題頁 ---------- */
+.title-page {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  text-align: center;
+  color: var(--ink);
+  background:
+    radial-gradient(60% 40% at 50% 42%, rgba(227, 181, 107, .16), transparent 72%),
+    linear-gradient(180deg, #0f1626 0%, #1b2742 100%);
+}
+.title-page .main {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: clamp(52px, 13vw, 104px);
+  line-height: .88;
+  text-wrap: balance;
+}
+.title-page .sub {
+  font-family: var(--font-title);
+  font-weight: 400;
+  font-size: clamp(32px, 7vw, 52px);
+  line-height: 1;
+  color: #d0d4dc;   /* 淺灰 */
+}
+.title-page .zh {
+  margin-top: 30px;
+  width: min(36%, 180px);
+  height: auto;
+}
+
+.title-page .hint {
+  margin-top: 44px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  letter-spacing: .2em;
+  color: var(--muted);
+  animation: hintPulse 2.4s ease-in-out infinite;
+}
+@keyframes hintPulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .title-page .hint { animation: none; } }
+
+/* ---------- 章節頁 ---------- */
+.menu {
+  height: 100%;
+  overflow-y: auto;
+  padding: 48px 16px 40px;
+  background:
+    radial-gradient(70% 36% at 80% 0%, rgba(227, 181, 107, .2), transparent 70%),
+    linear-gradient(180deg, #0f1626 0%, #1b2742 100%);
+}
+.menu-inner { width: min(100%, 640px); margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+.series h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 34px;
+  line-height: 1.3;
+  letter-spacing: .08em;
+  text-wrap: balance;
+}
+.series p { color: var(--muted); margin-top: 8px; }
+.series-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.chapter-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.chapter {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px 18px;
+}
+.chapter:not(:disabled):hover { border-color: var(--accent); }
+.chapter:disabled { cursor: default; opacity: .5; }
+.chapter .num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 24px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.chapter .title { font-family: var(--font-display); font-weight: 600; line-height: 1.5; }
+.chapter .intro { color: var(--muted); font-size: 15px; line-height: 1.6; }
+.chapter .status {
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chapter .status.reading { color: var(--deep); background: var(--accent); border-color: var(--accent); }
+.chapter .status.done { color: var(--accent); border-color: var(--accent); }
+
+.menu.enter { animation: menuIn .7s ease; }
+@keyframes menuIn { from { opacity: 0; } }
+
+/* ---------- 舞台與場景背景 ---------- */
+.stage {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  cursor: pointer;
+  transition: background 1.2s ease;
+  background: var(--deep);
+}
+/* 場景背景：在劇本裡用 bg: "名稱" 切換。照片放在 images/ 資料夾，上面疊一層暗色讓字看得清楚 */
+.stage[data-bg="rain"] {
+  background:
+    radial-gradient(60% 40% at 72% 58%, rgba(227, 181, 107, .28), transparent 70%),
+    repeating-linear-gradient(102deg, transparent 0 22px, rgba(200, 215, 255, .045) 22px 23px),
+    linear-gradient(180deg, #0f1626 0%, #1b2742 55%, #232b3d 100%);
+}
+.stage[data-bg="shop"] {
+  background:
+    radial-gradient(70% 55% at 50% 30%, rgba(227, 181, 107, .34), transparent 72%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .16) 0 3px, transparent 3px 46px),
+    linear-gradient(180deg, #3a2a22 0%, #2a2029 60%, #171a2a 100%);
+}
+.stage[data-bg="cafe"] {
+  background:
+    linear-gradient(180deg, rgba(10, 14, 26, .55) 0%, rgba(10, 14, 26, .12) 30%, rgba(10, 14, 26, .4) 100%),
+    url("images/bg-cafe-night.jpg") center / cover no-repeat,
+    var(--deep);
+}
+.stage[data-bg="basement"] {
+  background:
+    linear-gradient(180deg, rgba(10, 14, 26, .55) 0%, rgba(10, 14, 26, .12) 30%, rgba(10, 14, 26, .4) 100%),
+    url("images/bg-basement.jpg") center / cover no-repeat,
+    var(--deep);
+}
+.stage[data-bg="night"] {
+  background:
+    linear-gradient(180deg, rgba(10, 14, 26, .55) 0%, rgba(10, 14, 26, .12) 30%, rgba(10, 14, 26, .4) 100%),
+    url("images/bg-cafe-night.jpg") center / cover no-repeat,
+    var(--deep);
+}
+.stage[data-bg="cafe-rain"] {
+  background:
+    linear-gradient(180deg, rgba(10, 14, 26, .55) 0%, rgba(10, 14, 26, .12) 30%, rgba(10, 14, 26, .4) 100%),
+    url("images/bg-cafe-rain.jpg") center / cover no-repeat,
+    var(--deep);
+}
+.stage[data-bg="dawn"] {
+  background:
+    radial-gradient(90% 50% at 50% 100%, rgba(244, 190, 150, .5), transparent 70%),
+    linear-gradient(180deg, #24304f 0%, #54577a 55%, #a9838a 100%);
+}
+
+/* ---------- 上方列 ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+}
+.scene-name {
+  flex: 1;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .15em;
+  color: var(--muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool {
+  flex: none;
+  background: rgba(17, 23, 40, .6);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 14px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.tool[aria-pressed="true"] { color: var(--deep); background: var(--accent); border-color: var(--accent); }
+
+/* ---------- 選項 ---------- */
+.choices {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+.choices.off { visibility: hidden; }
+.choice {
+  width: min(100%, 520px);
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px 18px;
+  text-align: center;
+}
+.choice:hover { background: rgba(227, 181, 107, .2); }
+
+/* ---------- 回顧欄＋文字框 ---------- */
+.box-wrap {
+  width: min(100%, 752px);
+  margin: 0 auto;
+  padding: 0 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.strip { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: 10px; }
+.fast-badge { font-size: 14px; color: var(--accent); letter-spacing: .1em; }
+/* 回顧鈕：點一下打開全部對話紀錄 */
+.prev {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  background: rgba(17, 23, 40, .6);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.prev.off { visibility: hidden; }
+.prev .tag { flex: none; color: var(--accent); letter-spacing: .1em; }
+.prev .last { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.box {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 26px 18px 30px;
+  backdrop-filter: blur(4px);
+}
+/* 名字牌：掛在文字框左上角 */
+.name {
+  position: absolute;
+  top: 0;
+  left: 18px;
+  transform: translateY(-55%);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: .12em;
+  line-height: 1.4;
+  padding: 3px 16px;
+  color: var(--deep);
+  background: var(--tag, var(--accent));
+  border-radius: 3px;
+}
+/* 內文固定三行高：字級 16px × 行高 1.8 × 3 行。文字框因此不會跟著句子長短變動 */
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  height: calc(16px * 1.8 * 3);
+  overflow: hidden;
+}
+.box.narration .text { color: var(--muted); }
+.box.think .text { font-style: italic; color: var(--muted); }
+.box.ital .text { font-style: italic; }
+.box.fin .text { text-align: center; color: var(--accent); letter-spacing: .3em; padding-top: 1.2em; }
+.next {
+  position: absolute;
+  right: 18px;
+  bottom: 6px;
+  color: var(--accent);
+  font-size: 13px;
+  opacity: 0;
+}
+.box.done .next { opacity: 1; animation: bob 1.2s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .box.done .next { animation: none; }
+  .stage { transition: none; }
+}
+
+/* ---------- 轉黑過場 ---------- */
+.blackout {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .7s ease;
+  z-index: 20;
+}
+.blackout.on { opacity: 1; }
+
+/* ---------- 對話紀錄 ---------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 14, 26, .95);
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+  z-index: 5;
+}
+.overlay-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: .2em;
+}
+.log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(100%, 720px);
+  margin: 0 auto;
+  user-select: text;
+}
+.log .who { color: var(--accent); font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: .1em; }
+.log .narr { color: var(--muted); }
+.log .thought { font-style: italic; color: var(--muted); }
+.log .ital { font-style: italic; }
+.log .picked { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ============ 標題頁 ============ -->
+<button class="title-page" id="titlePage" type="button">
+  <span class="main" id="titleMain"></span>
+  <span class="sub" id="titleSub"></span>
+  <img class="zh" id="titleZh" src="images/title-zh.png" alt="" width="1031" height="141">
+  <span class="hint" id="titleHint"></span>
+</button>
+
+<!-- ============ 章節頁 ============ -->
+<main class="menu" id="menu" hidden>
+  <div class="menu-inner">
+    <header class="series">
+      <div class="series-top">
+        <h1 id="seriesTitle"></h1>
+        <button class="tool music-btn" id="btnMusicMenu" type="button" aria-pressed="true" aria-label="背景音樂開關">♪</button>
+      </div>
+      <p id="seriesSub"></p>
+    </header>
+    <ol class="chapter-list" id="chapterList"></ol>
+  </div>
+</main>
+
+<!-- ============ 劇情頁 ============ -->
+<div class="stage" id="stage" data-bg="cafe" hidden>
+  <div class="topbar">
+    <button class="tool" id="btnBack" type="button">‹ 章節</button>
+    <div class="scene-name" id="sceneName"></div>
+    <button class="tool music-btn" id="btnMusic" type="button" aria-pressed="true" aria-label="背景音樂開關">♪</button>
+    <button class="tool" id="btnAuto" type="button" aria-pressed="false">自動</button>
+    <button class="tool" id="btnRestart" type="button">重來</button>
+  </div>
+
+  <div class="choices off" id="choices"></div>
+
+  <div class="box-wrap">
+    <div class="strip">
+      <button class="prev off" id="prev" type="button" aria-label="打開對話紀錄">
+        <span class="tag">回顧 ▲</span>
+      </button>
+      <span class="fast-badge" id="fastBadge" hidden>快轉中 ▶▶</span>
+    </div>
+    <div class="box" id="box">
+      <div class="name" id="name" hidden></div>
+      <div class="text" id="text" aria-live="polite"></div>
+      <div class="next" aria-hidden="true">▼</div>
+    </div>
+  </div>
+
+  <div class="overlay" id="logPanel" hidden>
+    <div class="overlay-head"><span>對話紀錄</span><button class="tool" id="btnLogClose" type="button">關閉</button></div>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<!-- 轉黑過場用的黑幕（章節頁、劇情頁共用） -->
+<div class="blackout" id="blackout" aria-hidden="true"></div>
+
+<script>
+/* =====================================================================
+   一、作品資訊（顯示在章節頁最上面）
+   ===================================================================== */
+/* 標題頁：打開網站第一個看到的畫面，點一下進入章節頁 */
+const TITLE = {
+  main: "Whisper Of The Shade",
+  sub: "Fan Art",
+  zh: "煙硝絮語粉絲二創",   // 這行在畫面上是圖片（images/title-zh.png），這裡的文字只給螢幕報讀用
+  hint: "按一下進入章節頁"
+};
+
+/* 作品資訊：顯示在章節頁最上面 */
+const SERIES = {
+  title: "第？章 風雨",
+  bgm: "audio/bgm-menu.mp3",   // 章節頁的背景音樂
+  subtitle: ""   // 標題下方的小字，不需要就留空
+};
+
+/* =====================================================================
+   二、角色表：名字 → 名字牌顏色（沒列到的角色會用預設的燈火色）
+   ===================================================================== */
+const CAST = {
+  "梁謙":   "#b9a0e6",   // 紫
+  "吳宇丞": "#8fcf9a",   // 綠
+  "謝雁行": "#8db9ee",   // 藍
+  "范姜浩": "#ecd06a",   // 黃
+  "紀旻萱": "#b98a5e",   // 咖啡
+  "店長":   "#f0a8c0",   // 粉紅
+  "中年婦女": "#cfd3da", // 淺灰
+  "陳裕琴": "#cfd3da",
+  "王新元": "#cfd3da",
+  "陳裕琴、王新元": "#cfd3da"
+};
+
+/* =====================================================================
+   三、章節與劇本
+   每一章：{ title: "章節名", bgm: "audio/音樂檔名.mp3", script: [ … ] }（bgm 可省略）
+   還沒寫好的章節：{ title: "章節名", soon: true }（章節頁會顯示「敬請期待」）
+
+   劇本由上往下一行一行播，點一下前進一行：
+   { text: "…" }                     旁白（沒有名字牌）
+   { who: "名字", think: true, text: "（…）" }   內心話（有名字牌，斜體、字色較暗，文字用括弧包起來）
+   { who: "名字", italic: true, text: "…" }      回憶裡說過的話（有名字牌，只有斜體，字色照常）
+   { who: "名字", text: "…" }         某人說話（名字顯示在文字框右上角）
+   { scene: "場景名", bg: "背景" }    換場景（背景可用 cafe / cafe-rain / basement / night）
+   { scene: "場景名", bg: "背景", fade: true }   換場景，中間先轉黑再亮起來
+   { bgm: "audio/音樂檔名.mp3" }      從這裡開始換一首音樂（也可以寫在換場景那一行裡）
+   { choice: [ { text: "選項", goto: "標籤" }, … ] }   讓玩家選擇
+   { label: "標籤" }                  標記位置，給 goto 跳過來
+   { goto: "標籤" }                   直接跳到某個標籤
+   劇本播完後，再點一下就回到章節頁。
+   ===================================================================== */
+const CHAPTERS = [
+  {
+    title: "?-1 同舟",
+    bgm: "audio/bgm-calm.mp3",
+    script: [
+      { scene: "灰鷹咖啡廳", bg: "cafe" },
+      { text: "夜幕低垂。" },
+      { text: "玻璃門上掛的木牌，寫著「休息中」的那面已經被翻向外頭。" },
+      { text: "咖啡廳吧檯的暖黃光關了一半，木椅子斜扣進桌底。偶爾有三兩行人匆匆路過，摩托車駛近駛遠。" },
+      { text: "梁謙沖淨最後一個玻璃杯，倒扣在瀝水籃。乾淨柔軟的毛巾滑進指縫，濡濕的雙手回復乾燥。" },
+      { text: "他關上大部分照明，只留吧台幾盞垂吊式昏黃小燈。樓梯入口投射一方光亮，他往下走。" },
+
+      { scene: "灰鷹咖啡廳　地下室", bg: "basement", fade: true },
+      { text: "梁謙是最後一個走下去的，毫無聲息，只有面對樓梯的紀旻萱含笑瞥了眼來者，隨後又將眼神收回去。" },
+      { text: "他走到謝雁行的旁邊，自此所有共犯便到齊。" },
+      { text: "紀旻萱笑而不語的模樣，吳宇丞打量的眼光，范姜浩顯而易見的不耐，與謝雁行微微皺起的眉頭。" },
+      { text: "梁謙聯想起有一次演習——那是現在的店長還未成為店長的時候。" },
+      { text: "紀旻萱當壞人，自己被迫成為人質，他們也有過類似的表情。" },
+      { text: "沉默發酵的氣味是帶著苦的淡然。" },
+      { text: "紀旻萱栗子色的眼曈如違反自然規律的湖面，在范姜浩試圖丟石子時，泛不起一絲漣漪，平靜如什麼都沒發生。" },
+      { who: "范姜浩", text: "現在可以跟我們道歉了吧，紀旻萱。" },
+      { who: "吳宇丞", text: "還有知道一切但什麼都不說的梁先生。你們對店長真殘忍。" },
+      { who: "吳宇丞", text: "說真的吧，你們有沒有想過乾脆事先就向我們攤牌，如此一來，我們也不用跟著不明不白地演得那麼辛苦。" },
+      { who: "謝雁行", text: "我想，紀旻萱連對梁謙都只說了一半而已。" },
+      { who: "謝雁行", text: "梁謙不知道店長會被牽扯進來，對吧。" },
+      { who: "梁謙", text: "我不知道。我只知道紀旻萱會出一趟任務，好陣子都不會回來。" },
+      { who: "梁謙", text: "直到看見紀旻萱留給店長的信件，我才知道任務跟紅鴉有關。" },
+      { who: "梁謙", text: "至於對店長那邊，應該要有個適當的說詞，而夜梟會負責暗中保護。" },
+      { who: "吳宇丞", text: "難怪你一開始那麼抗拒讓店長進來。" },
+      { who: "梁謙", think: true, text: "（所謂的暗中保護根本是幌子，從頭到尾她的身分就不只是保護對象。她變成你的個人任務了吧。）" },
+      { who: "梁謙", think: true, text: "（反正吳宇丞負責監視自己，將保護對象，或是說白一點，人質，放進第十四分隊中，對夜梟而言也正好。）" },
+      { who: "梁謙", think: true, text: "（風險存在，但不大。）" },
+      { text: "或許戳破吳宇丞能替自己辯護，然而他承擔得起後果嗎？" },
+      { who: "梁謙", think: true, text: "（吳宇丞是算準自己待過第一分隊，了解什麼話能宣之於口，又有什麼事情得帶進棺材，）" },
+      { who: "梁謙", think: true, text: "（所以才敢講得如此明白吧。）" },
+      { who: "梁謙", text: "畢竟從我的角度看來，店長事前應該對紀旻萱的離開有所準備，而不該知道關於我們的事。" },
+      { text: "地下室的對話陷入一陣空白。幾人的目光下意識集中在終於歸來的主角身上。" },
+      { text: "從紀旻萱消失、店長來到第十四分隊之後，一切就變了調。" },
+      { text: "他們一向不過問彼此的過去，當然對團隊之外的個人任務也不多加探問。" },
+      { text: "但紀旻萱執行的任務將無辜者牽扯進夜梟，甚至還是她法律上的妹妹，一個對特務工作完全沒有概念的普通人。" },
+      { text: "若事先知會就算了，然而她可是一聲不吭地離開，留下爛攤子給第十四分隊的其餘成員。" },
+      { text: "其實大家都明白怒火應該對準夜梟，畢竟紀旻萱也不過是一枚棋子。" },
+      { text: "但是再怎麼說，暗示也好，挑明也罷，" },
+      { text: "但凡紀旻萱先前做出更多準備，他們就不用為了猜出夜梟與她的用意而疑神疑鬼、心思費盡。" },
+      { text: "或是他們因為某人的關係變得不理智，想越界了。" },
+      { text: "而紀旻萱垂下眼簾，終於啟唇，不緊不慢的。" },
+      { who: "紀旻萱", text: "個人任務事關夜梟機密，不可能事先知會你們，你們只要按照平常表現即可。" },
+      { who: "紀旻萱", text: "等妹妹成為店長，夜曲自然會給予更多指示。" },
+      { who: "紀旻萱", text: "我倒好奇你們幾個，明明都是老手，知道夜梟是如何運作的，更能夠自行推知內情，" },
+      { who: "紀旻萱", text: "卻偏要把這層紙捅破，為的又是什麼。" },
+      { who: "紀旻萱", text: "為了她嗎？" },
+      { who: "范姜浩", text: "紀旻萱，我對妳的個人任務內容並不在乎，我什麼都查得到。" },
+      { who: "范姜浩", text: "我在意的是，為什麼妳敢讓上面把妹妹扯進夜梟的破事。" },
+      { who: "范姜浩", text: "她不是依循著本意來我們這邊找妳的，而是刻意被妳誘導來當店長。" },
+      { who: "范姜浩", text: "妳不僅造成我們的困擾，還讓店長為了妳成天擔心。" },
+      { who: "范姜浩", text: "夜梟也不是不能交涉，但當初，妳不僅沒反抗就答應，還主動提出讓她擔任代理店長的請求。" },
+      { who: "紀旻萱", text: "這些都是你查到的？" },
+      { who: "范姜浩", text: "不然呢？反正爛命一條，我不想管夜梟會怎麼懲罰。這整件事情都莫名其妙。" },
+      { who: "紀旻萱", text: "范姜，讓她來到咖啡廳認識你們，是一種保護。" },
+      { text: "紀旻萱嘆了口氣，隨後轉向梁謙。" },
+      { who: "紀旻萱", text: "你對范姜浩說了什麼，梁謙？" },
+      { text: "她的直覺向來精準得嚇人。梁謙被紀旻萱寒冷的眼神盯得發怵，幾秒過後，卻是一股惱火的情緒湧上來。" },
+      { text: "他一直在逃避，逃避紀旻萱主動讓自己的妹妹涉險的事實。" },
+      { text: "然而那封信，以及紀旻萱自己的證詞，就這麼將事實赤裸裸地呈現在他們眼前。" },
+      { text: "其他人也同樣動搖。謝雁行的眉頭皺得更深，而梁謙也沒有讓吳宇丞眼中極其細微的不悅逃過自己的法眼。" },
+      { text: "他抓緊手臂上的刺青。" },
+      { who: "梁謙", text: "我只是告訴他，只要他想，他什麼都可以知道。當初妳沒跟我說妳會留下那封信。" },
+      { who: "紀旻萱", text: "如果跟你說了，你就會利用千方百計阻止她來到咖啡廳，或是知道任何有關第十四分隊的事情。" },
+      { text: "梁謙無法辯駁。他咬牙，無力地瞪視紀旻萱。" },
+      { text: "他不得不承認紀旻萱是對的——總是對的——於是便更可憎了。" },
+      { text: "讓店長來到咖啡廳、接受幾人的照料，甚至成為團隊的一員共同出任務，從事後看來，的確是最佳的保護措施。" },
+      { text: "然而這種說法僅為事後諸葛。當時間倒回店長來到咖啡廳的第一天，他知道他依舊會堅持，不讓店長加入咖啡廳。" },
+      { who: "謝雁行", text: "妳有打算讓店長知道這一切嗎？" },
+      { who: "紀旻萱", text: "時機到了，自然會告訴她。但現在不適合。" },
+      { who: "范姜浩", text: "店長有知情的權利。既然妳已經回來了，近期就跟她坦承吧。" },
+      { who: "紀旻萱", text: "有時候隱瞞是為了她好。" },
+      { text: "范姜浩的臉色顯而易見地垮了下來。梁謙依舊沒有做出反應，盯著紀旻萱的鼻頭盯得有些出神。" },
+      { text: "他有什麼理由能夠反駁紀旻萱的話？他們是同一類型的人。" },
+      { who: "吳宇丞", text: "等等，先不論到底要不要對店長坦白，我一直想問一件事。" },
+      { who: "吳宇丞", text: "我不是故意轉移焦點啦，但是梁謙，你對店長的態度很奇妙。" },
+      { who: "吳宇丞", text: "要不，趁大家推心置腹的機會跟我們說說你到底在想什麼，如此一來大家也好做事。" },
+      { who: "梁謙", text: "吳宇丞，店長很多事情不懂，作為第十四分隊的副隊長，我需要拿捏向她透露的情報多寡。" },
+      { who: "謝雁行", text: "梁謙，你很奇怪。我不想質疑你，但你的隱瞞會妨礙到我們的行動。" },
+      { who: "謝雁行", text: "你跟店長之間的事情我不會多問，但我認為，有些東西你必須跟我們說清楚，" },
+      { who: "謝雁行", text: "比如店長以前是不是曾經跟夜梟有過接觸。" },
+      { who: "范姜浩", text: "你不說，我也可以去查。破罐破摔嘛，沒什麼好怕的。" },
+      { text: "一陣靜默過後，反倒是紀旻萱開口。" },
+      { who: "紀旻萱", text: "這跟夜梟無關。是私事。" },
+      { who: "范姜浩", text: "什麼意思？私事？而且為什麼是紀旻萱來回答？" },
+      { who: "梁謙", think: true, text: "（紀旻萱是故意的。）" },
+      { text: "太陽穴隱隱發脹。梁謙的思緒轉了又轉，最終無力地開口。" },
+      { who: "梁謙", text: "但她不記得，或是沒認出我。" },
+      { text: "眾人停頓半晌，而梁謙不語。" },
+      { text: "話題空懸，除了紀旻萱，大家你看我我看你，見梁謙沒有要繼續闡述的意思，只能尷尬地發獃。" },
+      { text: "最後還是吳宇丞嘆出一口長氣，掛上一副平淡而不失禮貌的微笑。" },
+      { who: "吳宇丞", text: "這沒辦法解釋你對她的……保護慾？不過算了，反正我一直都沒有很懂你這個人。" },
+      { who: "吳宇丞", text: "我也沒奢望今天就能搞清楚你或紀旻萱葫蘆裡究竟賣什麼藥。" },
+      { who: "梁謙", text: "我以為我們不該談論彼此的私事，吳宇丞。" },
+      { text: "吳宇丞乾笑兩下，悻悻然地閉起嘴。" },
+      { text: "空氣像被抽乾了一樣。只有謝雁行放下水杯時，底座撞擊木桌發出的沉悶一響。" },
+      { text: "吳宇丞收起笑容，雙手插進薄外套口袋，抿起嘴。" },
+      { text: "紀旻萱依舊斂著眉眼，梁謙則是連維持表情的力氣都不想用，放任臉頰的肌肉留在原地，似笑非笑。" },
+      { text: "只見范姜浩愈發不耐，煩躁地抓起頭髮。" },
+      { who: "范姜浩", text: "店長的事情暫時不講就算了。我不想對店長有所隱瞞，但我目前更不想被紀旻萱揍。" },
+      { who: "范姜浩", text: "無論如何，紀旻萱，你既然回來了，乾脆分享一點紅鴉的情報給我們怎麼樣？" },
+      { who: "范姜浩", text: "我們幫你分攤工作，還要照顧店長，於情於理都該有點表示吧。" },
+      { who: "吳宇丞", text: "范姜浩，你好像菜市場裡敲竹槓的老闆欸。" },
+      { who: "范姜浩", text: "我覺得我講的很合理呀，有誰想反駁嗎？" },
+      { who: "謝雁行", text: "我是不想勉強紀旻萱，畢竟事關她的個人任務。不過，我也蠻想知道紅鴉的消息。" },
+      { who: "范姜浩", text: "你看，連謝雁行都這麼說了。" },
+      { who: "梁謙", text: "紀旻萱，我想這樣對彼此都有個交代。" },
+      { who: "紀旻萱", text: "你們也知道這是個人任務吧，能對你們透露的有限。" },
+      { text: "大家只是齊齊看她。她面對眾人的目光時依舊自得，沉思半晌。" },
+      { who: "紀旻萱", text: "你們也知道我被救出來的情況。說真的，我能說的也不多，很多事情都忘記了。" },
+      { who: "謝雁行", text: "忘記了？" },
+      { who: "紀旻萱", text: "藥物的影響。" },
+      { who: "紀旻萱", text: "我作為實驗體被抓捕進紅鴉的實驗室，這是在事情發生的幾個月前，就設計好的潛入方式。" },
+      { who: "紀旻萱", text: "進到紅鴉之後，我被關押在一間個人牢房。幫我注射藥物以及與我談話的是一個……看起來位階不低的男性。" },
+      { who: "紀旻萱", text: "身高約在一百八到一百八十五之間，體型瘦，總是戴著口罩，我只記得這些。他的樣貌在我的腦海裡是一片模糊。" },
+      { who: "吳宇丞", text: "這些特徵聽起來符合這個社會一半以上的男性。" },
+      { who: "吳宇丞", text: "啊，可以排除范姜浩，因為他不到一百八。" },
+      { who: "范姜浩", text: "吳宇丞，你閉嘴。" },
+      { who: "紀旻萱", text: "他每一次替我注射藥劑，都會問我一些問題，並且總是有人在旁邊記錄我的回覆。" },
+      { who: "紀旻萱", text: "那些提問，有些跟夜梟有關，也有些好像無關，但我想不起來確切的問題。" },
+      { who: "紀旻萱", text: "有時候我似乎失去意識，再醒過來的時候，只覺得頭很痛。" },
+      { who: "梁謙", text: "聽起來，他們在做某種藥物試驗。" },
+      { who: "謝雁行", text: "而且非法又不人道。" },
+      { who: "謝雁行", text: "藥物試驗的流程有一套嚴格的規範，現今產業界都必須遵照那套邏輯，" },
+      { who: "謝雁行", text: "經過一到三期、規模由小而大的測試，解盲，" },
+      { who: "謝雁行", text: "確定功效與安全性後，才有機會取得藥證進行大規模生產，最終上市。" },
+      { who: "謝雁行", text: "然而像紅鴉這種做法，聽起來是想繞過合法的申請管道。" },
+      { who: "梁謙", think: true, text: "（溫頌燁。）" },
+      { text: "梁謙又想起那個名字，眉頭微不可查地皺了皺。" },
+      { who: "范姜浩", text: "在製作毒品嗎？" },
+      { who: "吳宇丞", text: "有可能喔。畢竟已經有精油的前例。" },
+      { who: "紀旻萱", text: "在醫院的期間，我的確有感受到戒斷反應。" },
+      { who: "紀旻萱", text: "盜汗、心跳加速、肌肉顫抖，全身上下都不舒服。" },
+      { who: "紀旻萱", text: "很想要某種物質，而且我強烈地覺得，只要有那種物質在，我的狀況就會好轉，沒有就好像會死。" },
+      { who: "紀旻萱", text: "後來靠著醫院的鎮靜類藥物，才撐過最嚴重的那一周。" },
+      { text: "梁謙壓抑顫抖的手。不知名的藥品，戒斷反應，遺失的記憶。" },
+      { text: "這些字眼分開來看都很不對勁，合在一起更是怵目驚心。" },
+      { text: "恍神的剎那，紀旻萱的視線正好轉向他，對上眼時，她彎起嘴角。梁謙並沒有反應過來。" },
+      { who: "紀旻萱", text: "現在已經好多了。我還在服用醫院給我的藥物，每天一顆而已，狀況都維持得不錯，僅偶爾會感到頭暈。" },
+      { who: "紀旻萱", text: "醫生說定期回診，視情況再慢慢減藥。我被你們強行帶出來的時間點其實正好，當時我的身體可能快撐不下去了。" },
+      { who: "紀旻萱", text: "本來預期潛入三年，時間鄰近時，夜梟自然會透露情報給第十四分隊，讓你們將我帶回來。" },
+      { who: "紀旻萱", text: "不過陰錯陽差，提早被你們救了出來，現在這樣的結果也不賴。" },
+      { who: "紀旻萱", text: "我能講的，大概就這些。" },
+      { text: "冷氣與主機扇葉嗡嗡低鳴，梁謙一時分不清耳中的聲響究竟是環境中既存的雜音，還是他自己的耳鳴。" },
+      { text: "喉嚨莫名有些發乾，梁謙嚥了嚥口水。無論紀旻萱的遭遇，抑或被紀旻萱留下的店長，此時此刻都被他拋諸腦後。" },
+      { text: "刻意壓在心底的記憶不受控制地翻湧而上，某個男人的臉孔在其中閃爍。" },
+      { text: "梁謙強迫自己將視線聚焦在桌上的水杯，清透的水滴附著在內側杯壁，" },
+      { text: "他彷彿從中看見自己的倒影，想起在那些記憶中自己扮演的角色。" },
+      { text: "范姜浩開口的瞬間，梁謙才慢慢放鬆下緊繃的肩頭。" },
+      { text: "他在咖啡廳的地下室，不在那些回不去的地方。" },
+      { who: "范姜浩", text: "三年。妳跟夜梟本來打算讓店長等這麼久啊。" },
+      { who: "梁謙", text: "聽起來有一些能用的情報，但不多。" },
+      { who: "吳宇丞", text: "前提是紀旻萱說的都是實話。" },
+      { who: "紀旻萱", text: "我怎麼會騙你們呢。" },
+      { who: "吳宇丞", text: "妳這句話，我還可以繼續吐槽一個小時。刻意隱瞞重要情報來誤導搜查方向，也是一種說謊。" },
+      { text: "紀旻萱僅是眨了眨眼。" },
+      { text: "這種話無疑是五十步笑百步。他們幾個誰不是這樣呢？" },
+      { text: "說到底，無論是吳宇丞還是梁謙自己，都沒有資格指控紀旻萱。" },
+      { text: "情報人員湊在一起組成小隊，不過是暫時的同舟共濟。" },
+      { text: "到了需要的時刻，這艘勉強用釘子與木板拼起來的小船總要解體的。" },
+      { text: "在彼此隱瞞的前提下互相合作，才是情報人員需要的互利互惠。絕對的信任，彼此坦誠，不存在，也不需要存在。" },
+      { text: "同一時刻，梁謙又想起店長那認真而純粹的神情。或許不只他一人想起。" },
+      { text: "吳宇丞的嘴角維持完美的上揚弧度，而紀旻萱還以類似的笑容。梁謙很熟悉這種表情。" },
+      { who: "梁謙", think: true, text: "（兩個沒在笑的傢伙。）" },
+      { text: "繼續下去只是讓幾個戲精在舞台上毫無意義地針鋒相對，不會有實質上的進展。" },
+      { text: "他默默地給謝雁行一個眼神，後者抬起手腕，錶面上時針已經接近數字9。" },
+      { who: "謝雁行", text: "時間不早，先討論接下來的工作分配吧，現在這些事情再討論下去，也不會有結果。" },
+      { text: "吳宇丞聳聳肩，紀旻萱則贊同地點點頭。梁謙自然而然接管場面，分配工作一向是他的負責項目。" },
+      { text: "店長休假一周，所以到下周三前，店長的位子都由紀旻萱代替。" },
+      { text: "梁謙自動忽略紀旻萱虛情假意的「替代什麼的，也太失禮了吧」。" },
+      { text: "等店長回來，紀旻萱便暫調回總部接受後續調查，預計會需要兩周到一個月的時間。" },
+      { text: "夜曲已經允諾梁謙的安排，然而店長依舊是編制外人員，在這段時間，他們也必須確定店長未來的去向。" },
+      { text: "梁謙自是不希望店長繼續待在夜梟。" },
+      { text: "她大可以去過普通人的生活。" },
+      { text: "情報人員沒有所謂休假可言，即使在無需工作的日子，他們的神經依舊緊繃，必須警惕一切可能對夜梟造成危害的事物。" },
+      { text: "隱形工時很長，除了睡覺之外難以真正放鬆。需要非人的耐力與體力，才能跑這場永無止盡的馬拉松。" },
+      { text: "如果不是為了某個強烈的目的，或非身不由己，不會有人自願加入夜梟。" },
+      { text: "但那終究是店長自己的選擇。" },
+
+      { scene: "灰鷹咖啡廳　店門外", bg: "night", fade: true },
+      { text: "最終會議進行到接近九點半才結束。" },
+      { text: "踏出店門時，街角的路燈孤獨佇立，路樹的幾片枯葉散落在街邊，梁謙聽見皮鞋下的細碎聲響。" },
+      { text: "他將斜背包放入車廂。喀擦，轉動握把，引擎隨之低聲轟鳴。" },
+      { text: "淡黃色圓燈亮起，梁謙扣緊安全帽的扣環，駛入夜色中。" }
+    ]
+  },
+  {
+    title: "?-2 雨幕",
+    bgm: "audio/bgm-rain.mp3",
+    script: [
+      { scene: "灰鷹咖啡廳", bg: "cafe-rain" },
+      { text: "外頭正下著小雨。" },
+      { text: "梅雨季都是這樣，雨像是下不完似的。" },
+      { text: "店長一面看著玻璃門上細小的水珠，一面將冷掉的拿鐵一飲而盡。" },
+      { text: "剛結束一波人潮，大多是身著淺色襯衫配西裝褲的上班族，趁著中午休息到咖啡廳用餐，或是外帶便當與飲料。" },
+      { text: "接下來這一兩個小時，會陸陸續續來些享用下午茶與喝咖啡的客人。" },
+      { text: "下雨的時候，翻桌率會降低，這些人很可能一待就待到傍晚，" },
+      { text: "準備吃晚餐了，才考慮離開。" },
+      { text: "雨幕令街上的行人變得朦朧。" },
+      { text: "店裡開著冷氣，還算乾燥，也不熱，但店長能想像外頭那種頭髮與衣物黏上皮膚的不快。" },
+      { text: "有人收起雨傘，推門，風鈴一響，她掛起親切的微笑起身招呼。" },
+      { text: "客人想要的甜點已售完。" },
+      { who: "店長", text: "我們甜點師今天下午休假，目前只剩架上的甜點可以選擇。" },
+      { text: "梁謙默默地轉過身，將磨好的咖啡粉壓實，轉進義式咖啡機中。" },
+      { text: "這一個多小時如店長所預想，陸續來了幾組客人，正好填滿所有座位。" },
+      { text: "有的一身套裝，打開筆電處理著公務，也有的隨意穿著牛仔褲配拖鞋，拿著書閱讀。" },
+      { text: "一組外表青澀的學生正在平板上振筆疾書，想來也正好是鄰近期末考的季節。" },
+      { text: "沒有來聊天敘舊的客人，室內只聽得見古典音樂，夾雜敲鍵盤、書寫、紙張翻頁的聲音。" },
+      { text: "灰鷹咖啡廳沒有入座的時間限制。所以當那對中年男女進門時，她下意識開口。" },
+      { who: "店長", text: "座位滿了，需要候位喔。" },
+      { text: "直到下一刻，她看見男人微微顫抖的手，指尖捏著的深紫色卡片，與熟悉的玉蟬花圖案。" },
+      { text: "啊，她有些懊惱。" },
+      { text: "男人身著樸素的卡其色格紋襯衫與咖啡色長褲，女人則身穿一襲桃紅色洋裝。" },
+      { text: "兩人的衣服都染上雨水的深色，水珠沿髮間滴落。" },
+      { text: "他們站在門邊，步履躊躇，似乎因為那一聲如同閉門羹的宣告而準備向外轉。" },
+      { who: "店長", text: "我是咖啡廳的店長。抱歉，我忘記我們還有兩個位子。" },
+      { who: "店長", text: "外面下著雨，喝杯咖啡再走嗎？" },
+      { text: "她三兩步走向兩人，利用身體擋住男子手上的卡片，在所有客人看不見的地方，向對方攤開手，微笑示意。" },
+      { text: "中年男子腳步一滯，愣了半晌，將卡片交給她。" },
+      { text: "范姜浩已經與梁謙換了位子，鎮守起吧檯，對店長輕輕一笑，比出一個加油的手勢。" },
+      { text: "她將兩人帶位至隱蔽的角落，梁謙在那裡等待，而謝雁行方從廚房走出來。" },
+      { who: "店長", text: "那麼，有什麼煩惱想說給我們聽嗎？" },
+
+      { scene: "灰鷹咖啡廳", bg: "cafe-rain", fade: true, bgm: "audio/bgm-sad.mp3" },
+      { who: "中年婦女", text: "我真的不知道該怎麼辦，小樂到現在還在加護病房……而且醫生、醫生講的我也不明白，" },
+      { who: "中年婦女", text: "他們說她現在狀況不好，要有心理準備，可是本來不是都好好的嗎？" },
+      { text: "婦人抽抽噎噎地說著，話語如同失去控制的汽車，在路上歪斜扭曲地奔馳。" },
+      { text: "中年婦女名叫陳裕琴，一旁的中年男子是丈夫，名叫王新元。兩人一同扶養兩個孩子，家庭和睦。" },
+      { text: "幾天前，在一個平凡的夜裡，小女兒陳芊樂忽然劇烈嘔吐、渾身無力，緊接著失去意識與呼吸心跳。" },
+      { text: "幸好身為消防員的父親當時正好在家，馬上開始替女兒做心肺復甦術，並且指揮家人協助撥打電話求助。" },
+      { text: "救護車來得及時，女孩被送至最近的醫學中心接受治療。" },
+      { text: "然而直到現在，她依舊沒有恢復意識，靠著氣管內管與呼吸器支持呼吸。" },
+      { who: "陳裕琴", text: "醫生說，症狀、抽血結果與影像學檢查合併來看，她有可能接觸了某種毒物，" },
+      { who: "陳裕琴", text: "比如不適合孩子吃的藥物，或是化學藥劑。" },
+      { who: "陳裕琴", text: "我們家沒有人在吃什麼藥，家裡就一些保健食品，都放在櫃子高處，小孩子拿不到。" },
+      { who: "陳裕琴", text: "但是，我想到前幾天，家裡出現蟑螂，所以我買了網路上說很有用的除蟲藥，在客廳角落、廚房等地方都放了一些。" },
+      { who: "陳裕琴", text: "那種藥長得就像小糖果，所以我們想應該是……" },
+      { who: "陳裕琴", text: "我不知道會發生這種事啊，她平常也不會亂吃東西，怎麼會這樣……" },
+      { who: "店長", text: "您辛苦了，阿姨、叔叔，先喝一點熱奶茶，舒緩一下。" },
+      { who: "梁謙", text: "我們可能會需要問你們一些問題。" },
+      { who: "梁謙", text: "你們慢慢來，沒關係，準備好再跟我們說。我們也需要整理一下思緒。" },
+      { text: "兩人聞聲，點點頭，抿了一口范姜浩方才送上來的奶茶。" },
+      { text: "他們的眼神微微亮起來，而後又接連喝下幾口。" },
+      { text: "與此同時，店長的腦袋飛快運轉起來。" },
+      { text: "在第十四分隊待了好陣子，她開始思考每一次夜梟送出的玉蟬花名片都代表著何種意義。" },
+      { text: "夜梟不是慈善組織，每一張名片、每一個案件都帶有目的。" },
+      { text: "表面上看來只是一般社會案件的事情，背後可能藏著一條夜梟正在調查的暗線。" },
+      { who: "店長", think: true, text: "（跟紅鴉有關嗎？）" },
+      { text: "待奶茶見底，婦人長吁一口氣。" },
+      { who: "陳裕琴、王新元", text: "好了，可以繼續了。" },
+      { who: "梁謙", text: "先跟兩位確認，你們目前最需要的協助是什麼？" },
+      { who: "梁謙", text: "我先直接說說我自己的看法。根據兩位方才的說法，我認為你們目前最想知道女兒為什麼會變成這樣。" },
+      { who: "梁謙", text: "亦即，你們是否懷疑女兒的情況不單單只是除蟲藥造成的？" },
+      { who: "陳裕琴", text: "我‥…" },
+      { who: "陳裕琴", text: "我知道我自己不願意面對現實，我只是想知道這種藥真的會造成這樣的結果嗎？" },
+      { who: "陳裕琴", text: "我覺得是我害了我女兒。我希望她不要離開我們——" },
+      { text: "丈夫握住了她的手，她險些潰堤。謝雁行在紙張紀錄下關鍵字。" },
+      { who: "店長", text: "您別這麼說，先看看現在有什麼是我們可以做的。" },
+      { who: "王新元", text: "醫院那邊說，按照正常流程，我們會被通報到社會局，說是有家暴嫌疑。" },
+      { who: "王新元", text: "我自己是消防員，大概知道這是必經的調查程序，但這件事也帶給我們蠻大的打擊。" },
+      { who: "謝雁行", text: "社會局那邊的流程還是必須走，這是法律的規定，這一點沒辦法。" },
+      { who: "謝雁行", text: "通報不是把你們當嫌疑犯，只是要釐清事情的經過。會比較辛苦一些。" },
+      { who: "梁謙", text: "我們跟政府單位都有聯繫。這個案件或許有疑點需要調查，我們會先知會警察局以及社會局。" },
+      { who: "梁謙", text: "我想，你們現在的問題有兩個層面。首先，假設女兒的情況確實是除蟲藥造成的，" },
+      { who: "梁謙", text: "則我們先來調查，這種餌劑是否添加了非法的化學藥劑，會對人體造成極大的危害。" },
+      { who: "梁謙", text: "市面上的除蟲類藥物都有毒，但只要能上市，都要經過毒物審查，" },
+      { who: "梁謙", text: "確定誤食或接觸到少量時，並不會對人體造成不可逆損害。" },
+      { who: "梁謙", text: "再來，我認為目前依舊需要懷疑，她的情況並非除蟲藥所造成。" },
+      { who: "梁謙", text: "若是如此，造成這種情況的物質究竟是什麼，並且這案件是人為，還是意外？" },
+      { who: "王新元", text: "我不懂。你是說，下毒？" },
+      { who: "王新元", text: "不會有人故意對我們家孩子下毒啊，她吃的東西基本上都是我或我老婆準備的，或是在學校跟同學一起……" },
+      { who: "謝雁行", text: "不一定是下毒，也可能是誤食其他對人體有害的化學藥劑。你們的女兒幾歲？" },
+      { who: "陳裕琴", text: "七歲，剛上小一。她是個活潑好動的孩子，總是精力旺盛，在家裡跑來跑去的，要她寫功課還會生氣。" },
+      { text: "她用力吸了下鼻子，本來似乎還想開口說些什麼，但訥訥地，說不出口。" },
+      { who: "謝雁行", text: "這個歲數，聽起來不像是會隨便把食物以外的東西塞進嘴裡。" },
+      { who: "謝雁行", text: "有沒有問過學校老師，大約這兩周內，她是否有在學校或其他地方拿到來源不明的食物呢？" },
+      { who: "王新元", text: "醫生也有請教我們這個問題，所以我們去問過老師，但老師說沒有。" },
+      { who: "王新元", text: "她的好朋友們說，她們偶爾會互相分享餅乾糖果，" },
+      { who: "王新元", text: "但都是便利商店買的款式，大家都有吃，卻都沒有像她一樣的症狀。" },
+      { who: "店長", text: "或是其他認識的人，比如她的哥哥或較為親近的親屬，有沒有拿到來源不明的食物呢？" },
+      { who: "陳裕琴", text: "我們也問過小毅……就是我們家哥哥，他說沒有。" },
+      { who: "陳裕琴", text: "他們的爺爺奶奶們都過世了，我們平常也鮮少接觸其他親戚，至少這幾年來，都只有我們一家四口住在一起。" },
+      { who: "梁謙", text: "無論如何，我們會開始調查這件事。若有需要兩位配合與幫忙的事情，會再通知你們。" },
+      { who: "謝雁行", text: "這段期間，如果有想起其他跟案件有關的情報，請務必告訴我們。" },
+      { who: "店長", text: "阿姨、叔叔，對於你們女兒的事情，我們很遺憾。" },
+      { who: "店長", text: "但我們會盡力的。在案情明朗之前，先不要苛責自己。" },
+      { who: "店長", text: "兩位要照顧好自己，才能好好照顧女兒。" },
+      { who: "店長", text: "也記得關心大兒子的情況，我想，看到妹妹生病，他的心情也不會好受。" },
+      { text: "兩人聽完店長的話語，紅著眼，抿起嘴。" },
+      { text: "過了數秒，他們低聲說。" },
+      { who: "陳裕琴、王新元", text: "謝謝你們。" },
+      { text: "交換過聯絡方式，夫妻倆又連連鞠躬，將所有能拿來表達謝意的舉動都做盡，才趔趔趄趄離去。" },
+      { text: "幾個人望著他們在雨中共撐一把傘走遠的背影，陷入沉默。" },
+      { who: "店長", think: true, text: "（我喜歡第十四分隊工作的某些面向。）" },
+      { text: "比如方才，她看見他們的眼神裡燃起一絲火光。" },
+      { text: "她喜歡拉住懸崖邊搖搖欲墜的人們，與此同時也明白，事情不總是能如願。" },
+      { text: "他們會不會給予了過多的希望與期待，就像在崖邊拉住兩人，令他們暫時懸空，瀕臨極限，" },
+      { text: "卻阻止不了未來的某個瞬間，那突如其來的脫力以及墜落。" },
+      { who: "梁謙", text: "回去吧。晚點開會討論任務細節，到時候再來分配工作。" },
+      { text: "謝雁行點點頭。三人對看一眼，默契十足地轉身，回到各自的工作崗位。" },
+      { text: "她一邊沖洗杯子，一邊又想起姊姊。" },
+      { text: "最後一次見到對方是上個禮拜的事情。" },
+      { text: "姊姊的身體康復後，回第十四分隊上了幾天的班，又因為需配合夜梟的調查，所以暫時離開。" },
+      { text: "於是自己又成為暫代的店長。" },
+      { who: "店長", italic: true, text: "姊姊也喜歡拉住懸崖邊的人，所以才會成為心理師與夜梟的一份子嗎？" },
+      { text: "上一次，也是近期最後一次見到紀旻萱，她這麼問。" },
+      { text: "她看見姊姊露出一個微笑。" },
+      { who: "紀旻萱", italic: true, text: "是啊。" },
+      { text: "很小很小的時候，她也是被姊姊拉住的人。" },
+      { text: "太久遠了，久到她幾乎都要忘記，自己曾經多麼孤獨。" },
+      { text: "沒有親人可以依靠，沒有錢，沒有家，而姊姊是拉拔她長大的人，永遠都那麼溫暖。" },
+      { text: "紀旻萱的笑容令她聯想起梁謙說他永遠不會欺騙自己的模樣。" },
+      { text: "屋外的雨聲似乎大了些。" }
+    ]
+  }
+];
+
+/* =====================================================================
+   四、遊戲引擎（換劇本時不需要動這裡）
+   ===================================================================== */
+const TYPE_SPEED = 32;   // 每個字出現的間隔（毫秒），數字越小越快
+const SAVE_KEY = "story-game-progress-v9";
+
+const $ = id => document.getElementById(id);
+const menu = $("menu"), stage = $("stage"), box = $("box"), nameEl = $("name"), textEl = $("text");
+const choicesEl = $("choices"), sceneEl = $("sceneName"), logEl = $("log");
+const prevEl = $("prev");
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let store = { done: {}, saves: {} };
+try {
+  const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+  if (d && typeof d === "object") store = { done: d.done || {}, saves: d.saves || {} };
+} catch (e) {}
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(store)); } catch (e) {} }
+
+let cur = -1, script = [], labels = {};
+let i = 0, typing = false, typeTimer = null, autoTimer = null;
+let fullText = "", auto = false, choosing = false, ended = false;
+let history = [], lastLine = null;
+let curBgm = "";         // 這一章目前播到哪一首
+
+/* ---------- 背景音樂 ---------- */
+const BGM_VOLUME = 0.5;  // 音量，0 到 1（iPhone、iPad 不能由網頁調音量，會用裝置本身的音量）
+let musicOn = true, bgmSrc = "", bgmVol = 0, bgmFade = null, touched = false;
+try { if (localStorage.getItem(SAVE_KEY + "-music") === "off") musicOn = false; } catch (e) {}
+
+/* 全站只用一個播放器，任何時候最多只有一首在播 */
+const bgm = new Audio();
+bgm.loop = true;
+bgm.preload = "auto";
+
+/* 這台裝置能不能由網頁調音量（不能的話就不做淡入淡出，直接切換） */
+const canFade = (() => { try { const t = new Audio(); t.volume = 0.5; return t.volume === 0.5; } catch (e) { return false; } })();
+
+function setVol(v) { bgmVol = v; try { bgm.volume = v; } catch (e) {} }
+function fadeTo(to, done) {
+  clearInterval(bgmFade);
+  if (!canFade) { setVol(to); if (done) done(); return; }
+  bgmFade = setInterval(() => {
+    const d = to - bgmVol;
+    if (Math.abs(d) <= 0.05) {
+      setVol(to);
+      clearInterval(bgmFade);
+      if (done) done();
+    } else {
+      setVol(bgmVol + (d > 0 ? 0.05 : -0.05));
+    }
+  }, 60);
+}
+function tryPlay() {
+  const pr = bgm.play();
+  if (pr && pr.catch) pr.catch(() => {});
+}
+/* 換成 bgmSrc 這一首，從頭播 */
+function swapBgm() {
+  clearInterval(bgmFade);
+  if (!musicOn || !bgmSrc) { bgm.pause(); return; }
+  bgm.src = bgmSrc;
+  setVol(0);
+  tryPlay();
+  fadeTo(BGM_VOLUME);
+}
+/* 播放指定音樂；正在播別首就換過去；沒設定或已關閉就不播 */
+function playBgm(src) {
+  bgmSrc = src || "";
+  if (!musicOn || !bgmSrc) { stopBgm(); return; }
+  if (bgm.getAttribute("src") === bgmSrc) {
+    if (bgm.paused) setVol(0);
+    tryPlay();
+    fadeTo(BGM_VOLUME);
+  } else if (canFade && !bgm.paused && bgmVol > 0.05) {
+    fadeTo(0, swapBgm);          // 先淡出舊的，再換新的
+  } else {
+    swapBgm();                   // 直接換（iPhone、iPad 走這條）
+  }
+}
+/* 停止音樂 */
+function stopBgm() {
+  if (bgm.paused) { clearInterval(bgmFade); return; }
+  fadeTo(0, () => bgm.pause());
+}
+/* 目前這個畫面該播哪一首：劇情頁播該章的，章節頁播作品的 */
+function currentBgm() { return cur >= 0 ? curBgm : SERIES.bgm; }
+function paintMusicButton() {
+  document.querySelectorAll(".music-btn").forEach(b => b.setAttribute("aria-pressed", String(musicOn)));
+}
+function toggleMusic() {
+  musicOn = !musicOn;
+  try { localStorage.setItem(SAVE_KEY + "-music", musicOn ? "on" : "off"); } catch (e) {}
+  paintMusicButton();
+  if (musicOn) playBgm(currentBgm()); else { const keep = bgmSrc; stopBgm(); bgmSrc = keep; }
+}
+
+/* ---------- 標題頁 ---------- */
+$("titleMain").textContent = TITLE.main;
+$("titleSub").textContent = TITLE.sub;
+$("titleZh").alt = TITLE.zh;
+$("titleHint").textContent = TITLE.hint;
+$("titlePage").addEventListener("click", () => {
+  if (fading) return;
+  const show = () => { $("titlePage").hidden = true; menu.hidden = false; menu.scrollTop = 0; stopFade(); };
+  playBgm(SERIES.bgm);           // 這一下點擊同時讓章節頁音樂開始播
+  if (reduceMotion) { show(); return; }
+  fading = true;
+  $("blackout").classList.add("on");
+  fadeTimer = setTimeout(show, FADE_MS + 150);
+});
+
+/* ---------- 章節頁 ---------- */
+function renderMenu() {
+  $("seriesTitle").textContent = SERIES.title;
+  $("seriesSub").textContent = SERIES.subtitle;
+  $("seriesSub").hidden = !SERIES.subtitle;
+  const list = $("chapterList");
+  list.innerHTML = "";
+  CHAPTERS.forEach((ch, n) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chapter";
+    const mid = document.createElement("span");
+    const t = document.createElement("div");
+    t.className = "title";
+    t.textContent = ch.title;
+    mid.appendChild(t);
+    if (ch.intro) {
+      const p = document.createElement("div");
+      p.className = "intro";
+      p.textContent = ch.intro;
+      mid.appendChild(p);
+    }
+    const st = document.createElement("span");
+    st.className = "status";
+    if (ch.soon || !ch.script) { st.textContent = "敬請期待"; b.disabled = true; }
+    else if (store.done[n]) { st.textContent = "已閱讀"; st.classList.add("done"); }
+    else if (store.saves[n]) { st.textContent = "繼續閱讀"; st.classList.add("reading"); }
+    else st.textContent = "未讀";
+    b.append(mid, st);
+    b.addEventListener("click", () => enterChapter(n));
+    li.appendChild(b);
+    list.appendChild(li);
+  });
+}
+
+function goMenu() {
+  stopFade();
+  clearTimeout(holdTimer);
+  clearInterval(fastTimer);
+  fast = false;
+  $("fastBadge").hidden = true;
+  clearTimeout(autoTimer);
+  clearInterval(typeTimer);
+  typing = false;
+  if (cur >= 0 && !ended) save();
+  cur = -1;
+  $("logPanel").hidden = true;
+  stage.hidden = true;
+  playBgm(SERIES.bgm);
+  renderMenu();
+  menu.hidden = false;
+  menu.scrollTop = 0;
+}
+
+/* 從章節頁進入章節：畫面轉黑、音樂同時換成該章的，再亮起來 */
+function enterChapter(n) {
+  if (fading) return;
+  if (reduceMotion) { openChapter(n); return; }
+  fading = true;
+  const d = store.saves[n];
+  playBgm((d && d.bgm) || CHAPTERS[n].bgm);   // 接著看的話，播上次離開時的那一首
+  $("blackout").classList.add("on");
+  fadeTimer = setTimeout(() => openChapter(n), FADE_MS + 150);
+}
+
+function openChapter(n, fresh) {
+  cur = n;
+  script = CHAPTERS[n].script;
+  labels = {};
+  script.forEach((s, k) => { if (s.label) labels[s.label] = k; });
+  stopFade();
+  clearTimeout(autoTimer);
+  clearInterval(typeTimer);
+  i = 0; typing = false; choosing = false; ended = false;
+  history = []; lastLine = null; fullText = "";
+  choicesEl.classList.add("off");
+  choicesEl.innerHTML = "";
+  box.classList.remove("fin", "done");
+  nameEl.hidden = true;
+  textEl.textContent = "";
+  sceneEl.textContent = "";
+  $("logPanel").hidden = true;
+
+  const d = fresh ? null : store.saves[n];
+  curBgm = CHAPTERS[n].bgm || "";
+  if (d && Number.isInteger(d.i) && d.i >= 0 && d.i < script.length) {
+    i = d.i;
+    if (d.bgm) curBgm = d.bgm;
+    if (d.bg) stage.dataset.bg = d.bg;
+    sceneEl.textContent = d.scene || "";
+    history = Array.isArray(d.history) ? d.history.slice() : [];
+    const s = script[i];
+    if (s.choice && d.lastLine) {
+      lastLine = d.lastLine;
+      paintLine(lastLine);
+      textEl.textContent = fullText = lastLine.text;
+    } else if (s.text !== undefined) {
+      history.pop();   // 這一行會由 run 重新顯示並記錄
+    }
+  }
+  menu.hidden = true;
+  stage.hidden = false;
+  playBgm(curBgm);
+  run(true);
+}
+
+/* ---------- 劇情頁 ---------- */
+function save() {
+  if (cur < 0) return;
+  store.saves[cur] = { i, bg: stage.dataset.bg, scene: sceneEl.textContent, lastLine, history, bgm: curBgm };
+  persist();
+}
+
+function lineLabel(h) {
+  if (h.picked) return "▸ " + h.picked;
+  return (h.who ? h.who + "：" : "") + h.text;
+}
+
+/* 回顧欄顯示「目前這句的前一句」；選項出現或章節結束時，顯示最後一句 */
+function updatePrev(showLatest) {
+  const h = history[history.length - (showLatest ? 1 : 2)];
+  if (!h) { prevEl.classList.add("off"); return; }
+  prevEl.classList.remove("off");
+}
+
+function paintLine(line) {
+  box.classList.remove("fin");
+  box.classList.toggle("narration", !line.who && !line.think);
+  box.classList.toggle("think", !!line.think);
+  box.classList.toggle("ital", !!line.italic);
+  if (line.who) {
+    nameEl.textContent = line.who;
+    nameEl.style.setProperty("--tag", CAST[line.who] || "");
+    nameEl.hidden = false;
+  } else {
+    nameEl.hidden = true;
+  }
+}
+
+/* 螢幕特別窄、三行放不下時，把這一句的字再縮小一點點，直到放得下（最小 12px） */
+function fitText(t) {
+  textEl.style.fontSize = "";
+  const keep = textEl.textContent;
+  textEl.textContent = t;
+  let fs = parseFloat(getComputedStyle(textEl).fontSize) || 16;
+  while (textEl.scrollHeight > textEl.clientHeight + 1 && fs > 12) {
+    fs -= 0.5;
+    textEl.style.fontSize = fs + "px";
+  }
+  textEl.textContent = keep;
+}
+
+function showLine(line, instant) {
+  lastLine = { who: line.who || "", text: line.text, think: !!line.think, italic: !!line.italic };
+  history.push(lastLine);
+  updatePrev(false);
+  paintLine(line);
+  fullText = line.text;
+  fitText(fullText);
+  clearInterval(typeTimer);
+  box.classList.remove("done");
+  if (instant || reduceMotion) { lineDone(); return; }
+  const chars = Array.from(fullText);
+  let n = 0;
+  textEl.textContent = "";
+  typing = true;
+  typeTimer = setInterval(() => {
+    n++;
+    textEl.textContent = chars.slice(0, n).join("");
+    if (n >= chars.length) lineDone();
+  }, TYPE_SPEED);
+}
+
+function lineDone() {
+  clearInterval(typeTimer);
+  typing = false;
+  textEl.textContent = fullText;
+  box.classList.add("done");
+  if (auto) scheduleAuto();
+}
+
+function scheduleAuto() {
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(advance, 1300 + fullText.length * 70);
+}
+
+function showChoices(list) {
+  choosing = true;
+  box.classList.remove("done");
+  choicesEl.innerHTML = "";
+  list.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "choice";
+    b.textContent = c.text;
+    b.addEventListener("click", ev => {
+      ev.stopPropagation();
+      history.push({ picked: c.text });
+      choosing = false;
+      choicesEl.classList.add("off");
+      i = (c.goto && c.goto in labels) ? labels[c.goto] : i + 1;
+      run();
+    });
+    choicesEl.appendChild(b);
+  });
+  choicesEl.classList.remove("off");
+}
+
+/* 回章節頁：畫面轉黑、音樂換回章節頁的，再亮起來 */
+function fadeToMenu() {
+  if (reduceMotion) { goMenu(); return; }
+  fading = true;
+  clearTimeout(autoTimer);
+  box.classList.remove("done");
+  if (canFade) stopBgm(); else playBgm(SERIES.bgm);
+  $("blackout").classList.add("on");
+  fadeTimer = setTimeout(goMenu, FADE_MS + 150);
+}
+
+/* 章節結束：記錄已讀完，然後轉黑回章節頁 */
+function showEnd() {
+  ended = true;
+  store.done[cur] = true;
+  delete store.saves[cur];
+  persist();
+  fadeToMenu();
+}
+
+/* 轉黑過場：畫面變黑 → 換場景 → 亮起來 → 接著播下一句 */
+const FADE_MS = 700;     // 轉黑、亮起各花多久（毫秒）
+let fading = false, fadeTimer = null;
+function stopFade() {
+  clearTimeout(fadeTimer);
+  fading = false;
+  $("blackout").classList.remove("on");
+}
+function startFade(s) {
+  fading = true;
+  clearTimeout(autoTimer);
+  box.classList.remove("done");
+  $("blackout").classList.add("on");
+  fadeTimer = setTimeout(() => {
+    stage.style.transition = "none";
+    if (s.bg) stage.dataset.bg = s.bg;
+    if (s.scene !== undefined) sceneEl.textContent = s.scene;
+    void stage.offsetWidth;
+    stage.style.transition = "";
+    nameEl.hidden = true;
+    textEl.textContent = fullText = "";
+    box.classList.remove("narration", "think");
+    i++;
+    $("blackout").classList.remove("on");
+    fadeTimer = setTimeout(() => { fading = false; run(); }, FADE_MS);
+  }, FADE_MS + 150);
+}
+
+/* 從目前位置往下跑，直到遇到要顯示給玩家的東西 */
+function run(instant) {
+  let guard = 0;
+  while (i < script.length && guard++ < 10000) {
+    const s = script[i];
+    if (s.end) break;
+    if (s.choice) { showChoices(s.choice); save(); return; }
+    if (s.text !== undefined) { showLine(s, instant); save(); return; }
+    if (s.bgm !== undefined && (s.bgm || "") !== curBgm) { curBgm = s.bgm || ""; playBgm(curBgm); }
+    if (s.fade && !instant && !reduceMotion) { startFade(s); return; }
+    if (s.bg) stage.dataset.bg = s.bg;
+    if (s.scene !== undefined) sceneEl.textContent = s.scene;
+    if (s.goto && s.goto in labels) { i = labels[s.goto]; continue; }
+    i++;
+  }
+  showEnd();
+}
+
+function advance() {
+  clearTimeout(autoTimer);
+  if (cur < 0 || choosing || fading) return;
+  if (ended) { goMenu(); return; }
+  if (typing) { lineDone(); return; }   // 字還在跑：先整句顯示
+  i++;
+  run();
+}
+
+function openLog() {
+  logEl.innerHTML = "";
+  history.forEach(h => {
+    const d = document.createElement("div");
+    if (h.picked) {
+      d.className = "picked";
+      d.textContent = "▸ " + h.picked;
+    } else if (h.who) {
+      const w = document.createElement("div");
+      w.className = "who";
+      w.textContent = h.who;
+      const t = document.createElement("div");
+      if (h.think) t.className = "thought";
+      else if (h.italic) t.className = "ital";
+      t.textContent = h.text;
+      d.append(w, t);
+    } else {
+      d.className = h.think ? "thought" : "narr";
+      d.textContent = h.text;
+    }
+    logEl.appendChild(d);
+  });
+  clearTimeout(autoTimer);
+  $("logPanel").hidden = false;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function closeLog() {
+  $("logPanel").hidden = true;
+  if (auto && !typing && !choosing && !ended) scheduleAuto();
+}
+
+/* ---------- 長按快轉 ---------- */
+const HOLD_MS = 400;     // 按住多久開始快轉（毫秒）
+const FAST_MS = 110;     // 快轉時每句停留多久（毫秒），數字越小越快
+let holdTimer = null, fastTimer = null, fast = false, suppressClick = false;
+
+/* 後面還有沒有句子或選項（快轉不會自己跳出章節） */
+function hasMore() {
+  let k = i + 1, guard = 0;
+  while (k < script.length && guard++ < 10000) {
+    const s = script[k];
+    if (s.end) return false;
+    if (s.choice || s.text !== undefined) return true;
+    if (s.goto && s.goto in labels) { k = labels[s.goto]; continue; }
+    k++;
+  }
+  return false;
+}
+function fastStep() {
+  clearTimeout(autoTimer);
+  if (cur < 0 || choosing || ended || fading || !$("logPanel").hidden) return;
+  if (typing) { lineDone(); clearTimeout(autoTimer); return; }
+  if (!hasMore()) return;
+  i++;
+  run(true);
+  clearTimeout(autoTimer);
+}
+function stopFast() {
+  clearTimeout(holdTimer);
+  clearInterval(fastTimer);
+  if (fast) {
+    fast = false;
+    $("fastBadge").hidden = true;
+    suppressClick = true;                       // 放開手指的那一下不算點擊
+    setTimeout(() => { suppressClick = false; }, 300);
+    if (auto && !typing && !choosing && !ended) scheduleAuto();
+  }
+}
+stage.addEventListener("pointerdown", ev => {
+  if (ev.target.closest("button, .overlay")) return;
+  clearTimeout(holdTimer);
+  holdTimer = setTimeout(() => {
+    fast = true;
+    $("fastBadge").hidden = false;
+    fastStep();
+    fastTimer = setInterval(fastStep, FAST_MS);
+  }, HOLD_MS);
+});
+["pointerup", "pointercancel", "pointerleave"].forEach(t => stage.addEventListener(t, stopFast));
+stage.addEventListener("contextmenu", ev => {
+  if (!ev.target.closest(".overlay")) ev.preventDefault();
+});
+
+/* ---------- 操作 ---------- */
+stage.addEventListener("click", () => {
+  if (suppressClick) { suppressClick = false; return; }
+  advance();
+});
+document.addEventListener("keydown", ev => {
+  if (stage.hidden || ev.target.closest("button")) return;
+  if (ev.key === "Escape") { closeLog(); return; }
+  if ((ev.key === " " || ev.key === "Enter") && $("logPanel").hidden) {
+    ev.preventDefault();
+    advance();
+  }
+});
+prevEl.addEventListener("click", ev => { ev.stopPropagation(); openLog(); });
+$("btnLogClose").addEventListener("click", ev => { ev.stopPropagation(); closeLog(); });
+$("logPanel").addEventListener("click", ev => ev.stopPropagation());
+$("btnBack").addEventListener("click", ev => {
+  ev.stopPropagation();
+  if (fading) return;          // 已經在轉場中就不重複觸發
+  if (!ended && !choosing && !hasMore()) {
+    // 已經看到最後一句才按返回：也算讀完
+    ended = true;
+    store.done[cur] = true;
+    delete store.saves[cur];
+    persist();
+  }
+  fadeToMenu();
+});
+$("btnAuto").addEventListener("click", ev => {
+  ev.stopPropagation();
+  auto = !auto;
+  ev.currentTarget.setAttribute("aria-pressed", String(auto));
+  if (auto && !typing && !choosing && !ended) scheduleAuto(); else clearTimeout(autoTimer);
+});
+$("btnMusic").addEventListener("click", ev => { ev.stopPropagation(); toggleMusic(); });
+$("btnMusicMenu").addEventListener("click", ev => { ev.stopPropagation(); toggleMusic(); });
+/* 切到別的分頁或鎖螢幕時暫停，回來再繼續 */
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { clearInterval(bgmFade); bgm.pause(); }
+  else if (musicOn && bgmSrc && touched) playBgm(bgmSrc);
+});
+/* 瀏覽器規定要先點過畫面才能出聲：剛打開時在章節頁第一次點擊就開始播 */
+bgmSrc = SERIES.bgm || "";
+document.addEventListener("click", ev => {
+  touched = true;
+  if (cur < 0 && !fading && musicOn && bgm.paused && !ev.target.closest(".music-btn")) playBgm(SERIES.bgm);
+}, true);
+paintMusicButton();
+$("btnRestart").addEventListener("click", ev => {
+  ev.stopPropagation();
+  const n = cur;
+  delete store.saves[n];
+  persist();
+  openChapter(n, true);
+});
+
+renderMenu();
+</script>
+</body>
+</html>
