@@ -1384,10 +1384,13 @@ $("btnAuto").addEventListener("click", ev => {
 });
 $("btnMusic").addEventListener("click", ev => { ev.stopPropagation(); toggleMusic(); });
 $("btnMusicMenu").addEventListener("click", ev => { ev.stopPropagation(); toggleMusic(); });
-/* 切到別的分頁或鎖螢幕時暫停，回來再繼續 */
+/* 電腦：切到別的分頁或視窗時音樂照常播放。
+   手機、平板：切走或鎖螢幕時暫停，回來再繼續（不然會在背景一直響） */
+const pauseWhenHidden = matchMedia("(pointer: coarse)").matches;   // 用手指操作的裝置
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) { clearInterval(bgmFade); bgm.pause(); }
-  else if (musicOn && bgmSrc && touched) playBgm(bgmSrc);
+  if (document.hidden) {
+    if (pauseWhenHidden) { clearInterval(bgmFade); bgm.pause(); }
+  } else if (musicOn && bgmSrc && touched) playBgm(bgmSrc);
 });
 /* 瀏覽器規定要先點過畫面才能出聲：剛打開時在章節頁第一次點擊就開始播 */
 bgmSrc = SERIES.bgm || "";
