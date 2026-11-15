@@ -21,15 +21,15 @@
 # 檔案說明
 所有檔案都放在最外層，檔名不要更改，否則網頁會讀不到。
 # 檔案用途
-index.html	遊戲本體，劇本、畫面和程式
-bgm-menu.mp3	標題頁、章節頁的音樂
-bgm-calm.mp3	?-1 同舟的音樂
-bgm-rain.mp3	?-2 雨幕前半段的音樂
-bgm-sad.mp3	?-2 雨幕後半段的音樂
-bg-cafe-night.jpg	夜晚咖啡廳的背景
-bg-basement.jpg	咖啡廳地下室的背景
-bg-cafe-rain.jpg	雨天咖啡廳的背景
-title-zh.png	標題頁的中文標題圖
+* index.html：遊戲本體，劇本、畫面和程式
+* bgm-menu.mp3：標題頁、章節頁的音樂
+* bgm-calm.mp3：?-1 同舟的音樂
+* bgm-rain.mp3：?-2 雨幕前半段的音樂
+* bgm-sad.mp3：?-2 雨幕後半段的音樂
+* bg-cafe-night.jpg：夜晚咖啡廳的背景
+* bg-basement.jpg：咖啡廳地下室的背景
+* bg-cafe-rain.jpg：雨天咖啡廳的背景
+* title-zh.png：標題頁的中文標題圖
 # 素材來源與授權
 * 劇本：晨揚。未經同意請勿轉載。
 * 音樂：Music by <a href="https://pixabay.com/zh/users/andriig-54059306/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=633097">andrii g.</a> from <a href="https://pixabay.com/music//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=633097">Pixabay</a>
@@ -37,7 +37,7 @@ title-zh.png	標題頁的中文標題圖
     * bgm-calm.mp3
     * bgm-rain.mp3
     * bgm-sad.mp3 
-* 背景照片：皆來自<a href="https://unsplash.com">Unsplash</a>圖庫
+* 背景照片：皆來自 <a href="https://unsplash.com">Unsplash</a> 圖庫
     * bg-cafe-night.jpg： Photo by <a href="https://unsplash.com/@yurijean">Dorothy Ere</a> 
     * bg-basement.jpg：Photo by  <a href="https://unsplash.com/@nicotitto">nrd</a> 
     * bg-cafe-rain.jpg：Photo by <a href="https://unsplash.com/@bundo">Bundo Kim</a>
