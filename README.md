@@ -6,11 +6,9 @@
 
 本作為粉絲二次創作，與官方無關。原作的角色與世界觀屬於官方所有。
 # 章節
-?-1	同舟	已上線  
-
-?-2	雨幕	已上線  
-
-?-3	（待定）	撰寫中
+* ?-1	同舟	已上線
+* ?-2	雨幕	已上線
+* ?-3	（待定）	撰寫中
 # 怎麼操作
 * 點一下畫面：顯示下一句。字還在跑的時候點一下，會直接顯示整句。
 * 長按畫面：快轉，放開就停。遇到章節最後一句會自動停下。
@@ -39,15 +37,15 @@ title-zh.png	標題頁的中文標題圖
     * bgm-calm.mp3
     * bgm-rain.mp3
     * bgm-sad.mp3 
-* 背景照片：皆來自Unsplash圖庫
-    * bg-cafe-night.jpg： Photo by Dorothy Ere 
-    * bg-basement.jpg：Photo by nrd 
-    * bg-cafe-rain.jpg：Photo by Bundo Kim 
+* 背景照片：皆來自<a href="https://unsplash.com">Unsplash</a>圖庫
+    * bg-cafe-night.jpg： Photo by <a href="https://unsplash.com/@yurijean">Dorothy Ere</a> 
+    * bg-basement.jpg：Photo by  <a href="https://unsplash.com/@nicotitto">nrd</a> 
+    * bg-cafe-rain.jpg：Photo by <a href="https://unsplash.com/@bundo">Bundo Kim</a>
 * 字型
     * 英文標題：Corinthia（SIL Open Font License）
     * 內文：Noto Sans TC（SIL Open Font License）
     * 中文標題：松韻（justfont），以圖片形式使用，未包含字型檔
-更新紀錄
+# 更新紀錄
 * 2026-11-15：上線 ?-1 同舟、?-2 雨幕。
-聯絡
+# 聯絡
 有錯字或任何建議、疑慮，歡迎到<a href="https://www.plurk.com/yyangyy">噗浪</a>告訴我，或是可以投<a href="https://marshmallow-qa.com/amyt3233nckrleb?t=R67pqY&utm_medium=twitter&utm_source">棉花糖</a>跟我說。
