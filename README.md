@@ -1,11 +1,15 @@
 # WOTS_FanArt
 # 第？章 風雨
-《煙硝絮語》（Whisper Of The Shade）的粉絲二創文字劇情遊戲。可用瀏覽器打開，點擊畫面看劇情。
-線上閱讀： https://yyangyy-cy.github.io/WOTS_FanArt/
+《煙硝絮語》（Whisper Of The Shade）的粉絲二創文字劇情遊戲。可用瀏覽器打開，點擊畫面看劇情。  
+
+線上閱讀： https://yyangyy-cy.github.io/WOTS_FanArt/  
+
 本作為粉絲二次創作，與官方無關。原作的角色與世界觀屬於官方所有。
 # 章節
-?-1	同舟	已上線
-?-2	雨幕	已上線
+?-1	同舟	已上線  
+
+?-2	雨幕	已上線  
+
 ?-3	（待定）	撰寫中
 # 怎麼操作
 * 點一下畫面：顯示下一句。字還在跑的時候點一下，會直接顯示整句。
